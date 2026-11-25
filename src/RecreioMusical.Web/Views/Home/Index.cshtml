@@ -1,0 +1,138 @@
+﻿@model HomeViewModel
+@{
+    ViewData["Title"] = "Playlist do recreio";
+    var capacity = Model.PlaylistCapacity;
+}
+
+<section class="rm-hero">
+    <p class="rm-eyebrow">A playlist do intervalo</p>
+
+    <h1 class="rm-hero-title">
+        Cinco músicas.
+        <span>Uma escolha de cada vez.</span>
+    </h1>
+
+    <p class="rm-hero-lead">
+        Busque uma faixa no Spotify, assine com o seu apelido e garanta uma das cinco vagas
+        da playlist que o recreio inteiro vai ouvir.
+    </p>
+
+    <ol class="rm-steps" aria-label="Como funciona">
+        <li class="rm-step">
+            <span class="rm-step-number">1</span>
+            <span class="rm-step-text"><strong>Busque</strong> no Spotify</span>
+        </li>
+        <li class="rm-step">
+            <span class="rm-step-number">2</span>
+            <span class="rm-step-text"><strong>Diga</strong> quem está escolhendo</span>
+        </li>
+        <li class="rm-step">
+            <span class="rm-step-number">3</span>
+            <span class="rm-step-text"><strong>Ocupe</strong> uma das cinco vagas</span>
+        </li>
+    </ol>
+</section>
+
+@if (Model.ShowDevelopmentNote)
+{
+    <aside class="rm-dev-note" role="status">
+        <span class="rm-dev-badge">Fase 1</span>
+        <p>
+            Fundação pronta: Clean Architecture, injeção de dependência e esta página inicial.
+            @if (Model.ShowSpotifySetupHint)
+            {
+                <text>
+                    Para habilitar a busca na próxima fase, defina <code>Spotify:ClientId</code> e
+                    <code>Spotify:ClientSecret</code> via user-secrets (veja o README).
+                </text>
+            }
+        </p>
+    </aside>
+}
+
+<div class="rm-grid">
+    <section class="rm-panel" aria-labelledby="search-heading">
+        <header class="rm-panel-head">
+            <div>
+                <p class="rm-kicker">Passo 1</p>
+                <h2 id="search-heading">Escolha a música</h2>
+            </div>
+            <span class="rm-chip">Spotify</span>
+        </header>
+
+        <div class="rm-search" role="search" aria-label="Buscar músicas no Spotify">
+            <svg class="rm-search-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2" />
+                <path d="m16.2 16.2 4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+            </svg>
+            <input class="rm-search-input"
+                   type="search"
+                   placeholder="Música, artista ou álbum"
+                   aria-label="Buscar músicas no Spotify"
+                   disabled />
+            <button class="rm-search-button" type="button" disabled>Buscar</button>
+        </div>
+
+        <p class="rm-hint">
+            <span class="rm-hint-dot" aria-hidden="true"></span>
+            Em breve: busca integrada ao catálogo do Spotify.
+        </p>
+
+        <div class="rm-empty">
+            <span class="rm-empty-icon" aria-hidden="true">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                    <path d="M9 18V6.4a1 1 0 0 1 .8-.98l8-1.6A1 1 0 0 1 19 4.8v9.4"
+                          stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+                    <circle cx="6.5" cy="18" r="2.5" fill="currentColor" />
+                    <circle cx="16.5" cy="16.5" r="2.5" fill="currentColor" />
+                </svg>
+            </span>
+            <p class="rm-empty-title">Nenhuma busca por aqui ainda</p>
+            <p class="rm-empty-text">
+                As faixas encontradas no Spotify vão aparecer neste espaço, com capa, artistas e duração.
+            </p>
+        </div>
+    </section>
+
+    <section class="rm-panel rm-panel--playlist" aria-labelledby="playlist-heading">
+        <header class="rm-panel-head">
+            <div>
+                <p class="rm-kicker">Passo 2</p>
+                <h2 id="playlist-heading">Playlist do recreio</h2>
+            </div>
+            <span class="rm-chip rm-chip--accent">
+                <span class="rm-equalizer" aria-hidden="true"><i></i><i></i><i></i></span>
+                0/@capacity
+            </span>
+        </header>
+
+        <div class="rm-meter" role="img" aria-label="0 de @capacity vagas ocupadas">
+            @for (var segment = 0; segment < capacity; segment++)
+            {
+                <span class="rm-meter-segment"></span>
+            }
+        </div>
+
+        <ol class="rm-slots" aria-label="Vagas da playlist">
+            @for (var slot = 1; slot <= capacity; slot++)
+            {
+                <li class="rm-slot rm-slot--empty">
+                    <span class="rm-slot-index" aria-hidden="true">@slot.ToString("00")</span>
+                    <span class="rm-slot-body">
+                        <span class="rm-slot-title">Vaga disponível</span>
+                        <span class="rm-slot-subtitle">Aguardando alguém escolher</span>
+                    </span>
+                    <span class="rm-slot-dot" aria-hidden="true"></span>
+                </li>
+            }
+        </ol>
+
+        <footer class="rm-panel-foot">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <rect x="5" y="10" width="14" height="10" rx="2" stroke="currentColor" stroke-width="1.8" />
+                <path d="M8 10V7a4 4 0 0 1 8 0v3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+            </svg>
+            Quando as @capacity vagas forem preenchidas, só a administração libera espaço.
+        </footer>
+    </section>
+</div>

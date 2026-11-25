@@ -1,0 +1,46 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="dark" />
+    <meta name="theme-color" content="#070a09" />
+    <meta name="description" content="A playlist colaborativa do recreio: cinco músicas escolhidas pela turma." />
+    <title>@ViewData["Title"] · Recreio Musical</title>
+    <link rel="icon" type="image/svg+xml" href="~/favicon.svg" asp-append-version="true" />
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    @await RenderSectionAsync("Head", required: false)
+</head>
+<body class="rm-body">
+    <header class="rm-header">
+        <a class="rm-brand" asp-controller="Home" asp-action="Index" aria-label="Recreio Musical — página inicial">
+            <span class="rm-brand-mark" aria-hidden="true">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                    <path d="M9 18V6.4a1 1 0 0 1 .8-.98l8-1.6A1 1 0 0 1 19 4.8v9.4"
+                          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                    <circle cx="6.5" cy="18" r="2.5" fill="currentColor" />
+                    <circle cx="16.5" cy="16.5" r="2.5" fill="currentColor" />
+                </svg>
+            </span>
+            <span class="rm-brand-text"><strong>Recreio</strong> Musical</span>
+        </a>
+
+        <div class="rm-header-meta">
+            <span class="rm-pill rm-pill--accent">Playlist colaborativa</span>
+            <span class="rm-pill">5 vagas</span>
+        </div>
+    </header>
+
+    <main class="rm-main" role="main">
+        @RenderBody()
+    </main>
+
+    <footer class="rm-footer">
+        <span>Feito para o intervalo. Escolha com carinho.</span>
+        <span>Dados de músicas via Spotify · ASP.NET Core 10</span>
+    </footer>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

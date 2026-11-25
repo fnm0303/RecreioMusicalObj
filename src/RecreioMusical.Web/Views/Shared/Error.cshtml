@@ -1,0 +1,21 @@
+﻿@model ErrorViewModel
+@{
+    ViewData["Title"] = "Erro";
+}
+
+<section class="rm-hero rm-hero--compact">
+    <p class="rm-eyebrow">Erro inesperado</p>
+    <h1 class="rm-hero-title">Algo saiu do tom.</h1>
+    <p class="rm-hero-lead">
+        Não conseguimos concluir esta ação. Tente novamente em instantes.
+    </p>
+
+    @if (Model.ShowRequestId)
+    {
+        <p class="rm-note">Referência: <code>@Model.RequestId</code></p>
+    }
+
+    <p class="rm-actions">
+        <a class="rm-link" asp-controller="Home" asp-action="Index">Voltar para o recreio</a>
+    </p>
+</section>
