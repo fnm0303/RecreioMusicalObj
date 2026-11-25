@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using RecreioMusical.Application.UseCases;
 
 namespace RecreioMusical.Application;
 
@@ -8,12 +9,20 @@ namespace RecreioMusical.Application;
 public static class DependencyInjection
 {
     /// <summary>
-    /// Registra os casos de uso da aplicação.
-    /// Os handlers da playlist e da busca entram aqui na Fase 2.
+    /// Registra o relógio e os casos de uso. As implementações de repositório,
+    /// catálogo e notificações vêm da camada de infraestrutura.
     /// </summary>
     public static IServiceCollection AddApplication(this IServiceCollection services)
     {
         ArgumentNullException.ThrowIfNull(services);
+
+        services.AddSingleton(TimeProvider.System);
+
+        services.AddScoped<SearchTracksHandler>();
+        services.AddScoped<GetPlaylistHandler>();
+        services.AddScoped<AddTrackHandler>();
+        services.AddScoped<RemoveTrackHandler>();
+        services.AddScoped<ClearPlaylistHandler>();
 
         return services;
     }

@@ -36,14 +36,14 @@
 @if (Model.ShowDevelopmentNote)
 {
     <aside class="rm-dev-note" role="status">
-        <span class="rm-dev-badge">Fase 1</span>
+        <span class="rm-dev-badge">Fase 3</span>
         <p>
-            Fundação pronta: Clean Architecture, injeção de dependência e esta página inicial.
+            Infraestrutura pronta: SQLite com migrations, catálogo do Spotify e casos de uso testados.
             @if (Model.ShowSpotifySetupHint)
             {
                 <text>
-                    Para habilitar a busca na próxima fase, defina <code>Spotify:ClientId</code> e
-                    <code>Spotify:ClientSecret</code> via user-secrets (veja o README).
+                    Defina <code>Spotify:ClientId</code> e <code>Spotify:ClientSecret</code> via
+                    user-secrets (veja o README) para a busca funcionar quando a interface chegar.
                 </text>
             }
         </p>

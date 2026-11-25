@@ -1,19 +1,28 @@
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using RecreioMusical.Application;
 using RecreioMusical.Infrastructure;
+using RecreioMusical.Infrastructure.Persistence;
 using RecreioMusical.Infrastructure.Spotify;
 using RecreioMusical.Web.Configuration;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddApplication();
-builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddInfrastructure(builder.Configuration, builder.Environment.ContentRootPath);
 builder.Services.Configure<AdminOptions>(builder.Configuration.GetSection(AdminOptions.SectionName));
 
 builder.Services.AddControllersWithViews();
 builder.Services.AddProblemDetails();
 
 var app = builder.Build();
+
+await using (var scope = app.Services.CreateAsyncScope())
+{
+    var database = scope.ServiceProvider.GetRequiredService<PlaylistDbContext>();
+    await database.Database.MigrateAsync();
+    app.Logger.LogInformation("Banco da playlist pronto (SQLite).");
+}
 
 if (!app.Environment.IsDevelopment())
 {
