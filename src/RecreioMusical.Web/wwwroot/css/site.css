@@ -3,18 +3,19 @@
    ========================================================================== */
 
 :root {
-    --rm-bg: #070a09;
-    --rm-surface: #0d1311;
-    --rm-surface-raised: #111a16;
+    --rm-bg: #060b12;
+    --rm-surface: #0b141f;
+    --rm-surface-raised: #0f1c2b;
     --rm-border: rgba(255, 255, 255, 0.08);
     --rm-border-strong: rgba(255, 255, 255, 0.15);
-    --rm-text: #f3f8f5;
-    --rm-text-soft: #c9d7d0;
-    --rm-muted: #93a79d;
-    --rm-faint: #677a71;
-    --rm-accent: #1ed760;
-    --rm-accent-bright: #86ffb4;
-    --rm-accent-soft: rgba(30, 215, 96, 0.12);
+    --rm-text: #f2f8fd;
+    --rm-text-soft: #c5d6e5;
+    --rm-muted: #8fa5ba;
+    --rm-faint: #657b91;
+    --rm-accent: #38bdf8;
+    --rm-accent-bright: #7dd3fc;
+    --rm-accent-soft: rgba(56, 189, 248, 0.12);
+    --rm-on-accent: #04121c;
     --rm-warning: #ffd166;
     --rm-radius: 24px;
     --rm-radius-sm: 14px;
@@ -40,9 +41,9 @@ body.rm-body {
     background-image:
         linear-gradient(rgba(255, 255, 255, 0.022) 1px, transparent 1px),
         linear-gradient(90deg, rgba(255, 255, 255, 0.022) 1px, transparent 1px),
-        radial-gradient(60rem 40rem at 6% -14%, rgba(30, 215, 96, 0.17), transparent 62%),
-        radial-gradient(52rem 38rem at 104% -4%, rgba(56, 120, 255, 0.11), transparent 58%),
-        radial-gradient(44rem 32rem at 50% 118%, rgba(30, 215, 96, 0.08), transparent 62%);
+        radial-gradient(60rem 40rem at 6% -14%, rgba(56, 189, 248, 0.17), transparent 62%),
+        radial-gradient(52rem 38rem at 104% -4%, rgba(14, 165, 233, 0.10), transparent 58%),
+        radial-gradient(44rem 32rem at 50% 118%, rgba(56, 189, 248, 0.08), transparent 62%);
     background-size: 64px 64px, 64px 64px, auto, auto, auto;
     background-attachment: fixed;
     -webkit-font-smoothing: antialiased;
@@ -50,7 +51,7 @@ body.rm-body {
 }
 
 ::selection {
-    color: #04140a;
+    color: var(--rm-on-accent);
     background: var(--rm-accent);
 }
 
@@ -78,7 +79,8 @@ body.rm-body {
 .rm-brand {
     display: inline-flex;
     align-items: center;
-    gap: 13px;
+    gap: 12px;
+    min-width: 0;
     color: var(--rm-text);
     text-decoration: none;
     transition: transform 0.2s ease;
@@ -89,15 +91,27 @@ body.rm-body {
     transform: translateY(-1px);
 }
 
-.rm-brand-mark {
-    display: grid;
-    place-items: center;
-    width: 44px;
-    height: 44px;
-    border-radius: 14px;
-    color: #04140a;
-    background: linear-gradient(145deg, #37e97b, #12a648);
-    box-shadow: 0 10px 28px rgba(30, 215, 96, 0.28);
+.rm-school-plaque {
+    display: inline-flex;
+    align-items: center;
+    flex: none;
+    padding: 5px 9px;
+    border-radius: 10px;
+    background: #f7fbff;
+    box-shadow: 0 8px 22px rgba(2, 10, 22, 0.4);
+}
+
+.rm-school-logo {
+    display: block;
+    width: auto;
+    height: 26px;
+}
+
+.rm-brand-divider {
+    flex: none;
+    width: 1px;
+    height: 26px;
+    background: var(--rm-border-strong);
 }
 
 .rm-brand-text {
@@ -130,7 +144,7 @@ body.rm-body {
 
 .rm-pill--accent {
     color: var(--rm-accent);
-    border-color: rgba(30, 215, 96, 0.32);
+    border-color: rgba(56, 189, 248, 0.32);
     background: var(--rm-accent-soft);
 }
 
@@ -193,7 +207,7 @@ body.rm-body {
 @supports ((-webkit-background-clip: text) or (background-clip: text)) {
     .rm-hero-title span {
         color: var(--rm-accent);
-        background: linear-gradient(100deg, #d6ffe6 0%, #5cff9a 45%, #12b3a0 100%);
+        background: linear-gradient(100deg, #e0f2fe 0%, #7dd3fc 45%, #0ea5e9 100%);
         -webkit-background-clip: text;
         background-clip: text;
         -webkit-text-fill-color: transparent;
@@ -245,7 +259,7 @@ body.rm-body {
     font-weight: 800;
     color: var(--rm-accent);
     background: var(--rm-accent-soft);
-    box-shadow: inset 0 0 0 1px rgba(30, 215, 96, 0.24);
+    box-shadow: inset 0 0 0 1px rgba(56, 189, 248, 0.24);
 }
 
 /* --------------------------------------------------------------------------
@@ -326,7 +340,7 @@ body.rm-body {
 
 .rm-panel--playlist {
     background:
-        linear-gradient(180deg, rgba(30, 215, 96, 0.065), rgba(30, 215, 96, 0.012)),
+        linear-gradient(180deg, rgba(56, 189, 248, 0.065), rgba(56, 189, 248, 0.012)),
         var(--rm-surface-raised);
 }
 
@@ -372,8 +386,8 @@ body.rm-body {
 
 .rm-chip--accent {
     color: var(--rm-accent);
-    border-color: rgba(30, 215, 96, 0.3);
-    background: rgba(30, 215, 96, 0.07);
+    border-color: rgba(56, 189, 248, 0.3);
+    background: rgba(56, 189, 248, 0.07);
 }
 
 /* --------------------------------------------------------------------------
@@ -393,8 +407,8 @@ body.rm-body {
 }
 
 .rm-search:focus-within {
-    border-color: rgba(30, 215, 96, 0.5);
-    box-shadow: 0 0 0 4px rgba(30, 215, 96, 0.1);
+    border-color: rgba(56, 189, 248, 0.5);
+    box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.1);
 }
 
 .rm-search-icon {
@@ -416,7 +430,7 @@ body.rm-body {
 }
 
 .rm-search-input::placeholder {
-    color: #6f8178;
+    color: #64798f;
 }
 
 .rm-search-input:disabled {
@@ -431,7 +445,7 @@ body.rm-body {
     border-radius: 11px;
     font-size: 0.9rem;
     font-weight: 750;
-    color: #04140a;
+    color: var(--rm-on-accent);
     background: var(--rm-accent);
     cursor: pointer;
     transition: background 0.2s ease, opacity 0.2s ease;
@@ -466,7 +480,7 @@ body.rm-body {
 
 .rm-hint-dot--live {
     background: var(--rm-accent);
-    box-shadow: 0 0 0 4px rgba(30, 215, 96, 0.1);
+    box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.1);
 }
 
 .rm-empty {
@@ -493,7 +507,7 @@ body.rm-body {
     border-radius: 50%;
     color: var(--rm-accent);
     background: var(--rm-accent-soft);
-    box-shadow: inset 0 0 0 1px rgba(30, 215, 96, 0.2);
+    box-shadow: inset 0 0 0 1px rgba(56, 189, 248, 0.2);
 }
 
 .rm-empty-title {
@@ -584,7 +598,7 @@ body.rm-body {
     font-size: 0.76rem;
     font-variant-numeric: tabular-nums;
     letter-spacing: 0.07em;
-    color: #5d7067;
+    color: #5e738a;
 }
 
 .rm-slot-body {
@@ -618,7 +632,7 @@ body.rm-body {
 }
 
 .rm-slot--empty .rm-slot-subtitle {
-    color: #5f7269;
+    color: #60758c;
 }
 
 .rm-slot-dot {
@@ -661,7 +675,7 @@ body.rm-body {
     padding: 22px 24px 30px;
     border-top: 1px solid rgba(255, 255, 255, 0.06);
     font-size: 0.79rem;
-    color: #61736a;
+    color: #62778e;
 }
 
 .rm-note {
@@ -678,7 +692,7 @@ body.rm-body {
     display: inline-flex;
     align-items: center;
     padding-bottom: 2px;
-    border-bottom: 1px solid rgba(30, 215, 96, 0.4);
+    border-bottom: 1px solid rgba(56, 189, 248, 0.4);
     font-size: 0.92rem;
     font-weight: 650;
     color: var(--rm-accent);
@@ -736,6 +750,18 @@ body.rm-body {
         grid-template-columns: minmax(0, 1fr);
     }
 
+    .rm-school-logo {
+        height: 24px;
+    }
+
+    .rm-school-plaque {
+        padding: 4px 8px;
+    }
+
+    .rm-brand-divider {
+        height: 24px;
+    }
+
     .rm-hero {
         padding-top: 42px;
     }
@@ -749,6 +775,22 @@ body.rm-body {
     .rm-header {
         flex-wrap: wrap;
         padding: 22px 18px 6px;
+    }
+
+    .rm-brand {
+        gap: 10px;
+    }
+
+    .rm-school-logo {
+        height: 22px;
+    }
+
+    .rm-school-plaque {
+        padding: 4px 7px;
+    }
+
+    .rm-brand-divider {
+        height: 22px;
     }
 
     .rm-main {
@@ -783,6 +825,23 @@ body.rm-body {
 @media (max-width: 430px) {
     .rm-header-meta .rm-pill {
         display: none;
+    }
+
+    .rm-brand {
+        gap: 8px;
+    }
+
+    .rm-school-logo {
+        height: 18px;
+    }
+
+    .rm-school-plaque {
+        padding: 3px 6px;
+        border-radius: 8px;
+    }
+
+    .rm-brand-divider {
+        height: 18px;
     }
 
     .rm-brand-text {
@@ -847,12 +906,12 @@ body.rm-body {
 }
 
 .rm-input:focus {
-    border-color: rgba(30, 215, 96, 0.55);
-    box-shadow: 0 0 0 4px rgba(30, 215, 96, 0.1);
+    border-color: rgba(56, 189, 248, 0.55);
+    box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.1);
 }
 
 .rm-input::placeholder {
-    color: #6f8178;
+    color: #64798f;
 }
 
 .rm-identity-hint {
@@ -964,11 +1023,11 @@ body.rm-body {
 .rm-result-action {
     flex: none;
     padding: 8px 12px;
-    border: 1px solid rgba(30, 215, 96, 0.36);
+    border: 1px solid rgba(56, 189, 248, 0.36);
     border-radius: 9px;
     font-size: 0.78rem;
     font-weight: 750;
-    color: #04140a;
+    color: var(--rm-on-accent);
     background: var(--rm-accent);
     cursor: pointer;
     transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
@@ -986,8 +1045,8 @@ body.rm-body {
 }
 
 .rm-meter-segment--filled {
-    background: linear-gradient(90deg, #1ed760, #86ffb4);
-    box-shadow: 0 0 12px rgba(30, 215, 96, 0.28);
+    background: linear-gradient(90deg, #38bdf8, #7dd3fc);
+    box-shadow: 0 0 12px rgba(56, 189, 248, 0.28);
 }
 
 .rm-playlist-status {
@@ -1026,12 +1085,12 @@ body.rm-body {
 
 .rm-icon-button--play {
     color: var(--rm-accent);
-    border-color: rgba(30, 215, 96, 0.28);
+    border-color: rgba(56, 189, 248, 0.28);
     background: var(--rm-accent-soft);
 }
 
 .rm-icon-button--play:hover {
-    color: #04140a;
+    color: var(--rm-on-accent);
     background: var(--rm-accent);
 }
 
@@ -1044,9 +1103,9 @@ body.rm-body {
 .rm-player {
     margin: 16px 0 8px;
     padding: 12px;
-    border: 1px solid rgba(30, 215, 96, 0.22);
+    border: 1px solid rgba(56, 189, 248, 0.22);
     border-radius: 16px;
-    background: rgba(30, 215, 96, 0.045);
+    background: rgba(56, 189, 248, 0.045);
 }
 
 .rm-player-head {
@@ -1123,11 +1182,11 @@ body.rm-body {
     justify-content: center;
     gap: 6px;
     padding: 9px 14px;
-    border: 1px solid rgba(30, 215, 96, 0.4);
+    border: 1px solid rgba(56, 189, 248, 0.4);
     border-radius: 10px;
     font-size: 0.82rem;
     font-weight: 750;
-    color: #04140a;
+    color: var(--rm-on-accent);
     background: var(--rm-accent);
     cursor: pointer;
     white-space: nowrap;
@@ -1173,7 +1232,7 @@ body.rm-body {
 
 .rm-live[data-state="live"] .rm-live-dot {
     background: var(--rm-accent);
-    box-shadow: 0 0 0 4px rgba(30, 215, 96, 0.1);
+    box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.1);
     animation: rm-pulse 1.8s ease-in-out infinite;
 }
 
@@ -1262,12 +1321,12 @@ body.rm-body {
     z-index: 50;
     max-width: min(100% - 32px, 480px);
     padding: 11px 16px;
-    border: 1px solid rgba(30, 215, 96, 0.35);
+    border: 1px solid rgba(56, 189, 248, 0.35);
     border-radius: 12px;
     font-size: 0.85rem;
     font-weight: 600;
-    color: #eafff2;
-    background: #0d2a1a;
+    color: #e6f7ff;
+    background: #072033;
     box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
     transform: translateX(-50%);
 }
@@ -1333,5 +1392,27 @@ body.rm-body {
 
     .rm-player {
         padding: 9px;
+    }
+}
+
+@media (max-width: 360px) {
+    .rm-brand {
+        gap: 6px;
+    }
+
+    .rm-school-logo {
+        height: 15px;
+    }
+
+    .rm-school-plaque {
+        padding: 2px 5px;
+    }
+
+    .rm-brand-divider {
+        display: none;
+    }
+
+    .rm-brand-text {
+        font-size: 0.95rem;
     }
 }

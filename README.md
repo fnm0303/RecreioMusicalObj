@@ -154,6 +154,7 @@ Erros da API usam *Problem Details* com `status`, `title`, `detail`, `instance` 
 - **Cinco vagas fixas**: o banco tem chave primária em `Slot` (1–5) e índice único em `TrackId`, garantindo o limite e a ausência de duplicatas mesmo com adições simultâneas.
 - **Entidade separada:** `PlaylistItemEntity` mapeia a tabela e é convertida para o `PlaylistItem` do domínio, que continua sem atributos de EF.
 - **Sem login**: a playlist é pública e o PIN protege somente remoção e limpeza.
+- **Identidade visual**: tema azul-céu/ciano com tokens em `site.css`; a logo do Colégio Objetivo fica no cabeçalho dentro de uma plaquinha clara, para contraste sobre o fundo escuro, e escala nos breakpoints de 900, 700, 430 e 360 px.
 - **Reprodução**: apps novos do Spotify não retornam mais `preview_url`; o player oficial embed será usado, sem prometer áudio em todas as faixas.
 
 ## Roadmap
