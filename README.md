@@ -2,15 +2,14 @@
 
 Aplicativo web para montar, em conjunto, a playlist do recreio: **cinco músicas**, escolhidas por qualquer pessoa, sem login. A busca usa a API do Spotify e cada música é creditada ao apelido de quem escolheu.
 
-> **Status:** Fase 3 de 5 concluída — domínio, casos de uso, SQLite/EF Core e integração com o Spotify, com 116 testes.
-> A interface funcional (busca, PIN e SSE) entra na Fase 4.
+> **Status:** Fase 4 de 5 concluída — busca no Spotify, playlist ao vivo por SSE, player embed e administração por PIN, com 129 testes.
 
 ## Stack
 
 - ASP.NET Core MVC (.NET 10) com Razor/cshtml
 - Clean Architecture em quatro camadas
 - SQLite + EF Core com migrations
-- SSE para sincronizar a playlist entre dispositivos (Fase 4)
+- SSE para sincronizar a playlist entre dispositivos
 - Spotify Web API via *Client Credentials* — sem login do usuário
 - xUnit para testes
 
@@ -33,7 +32,7 @@ Os testes de arquitetura garantem que `Domain` e `Application` não conhecem as 
 ## Pré-requisitos
 
 - .NET SDK **10.0.203** (o `global.json` fixa a versão; `dotnet --version` deve retornar `10.0.x`)
-- Credenciais de um app do Spotify (necessárias a partir da Fase 3)
+- Credenciais de um app do Spotify
 - Navegador moderno
 
 ## Como rodar
@@ -69,7 +68,7 @@ O esquema garante no banco as invariantes críticas: chave primária em `Slot` (
 
 Nenhum segredo fica no repositório. Os valores são lidos de user-secrets em desenvolvimento e de variáveis de ambiente em produção.
 
-### Spotify (necessário a partir da Fase 3)
+### Spotify
 
 1. Acesse <https://developer.spotify.com/dashboard> e faça login.
 2. Crie um app (*Create app*). O formulário exige uma *Redirect URI*; use `http://localhost:5209/callback` — ela não é usada pelo fluxo *Client Credentials*.
@@ -87,10 +86,10 @@ Em produção, use as variáveis de ambiente `Spotify__ClientId` e `Spotify__Cli
 
 ### PIN administrativo
 
-Remover músicas e limpar a playlist exigirá PIN (Fase 4). Neste ambiente já existe um valor provisório `1234`:
+Remover músicas e limpar a playlist exige PIN. Neste ambiente já existe um valor provisório `1234`:
 
 ```powershell
-dotnet user-secrets set "Admin:Pin" "1234" --project src/RecreioMusical.Web
+dotnet user-secrets set "Admin:Pin" "19031984" --project src/RecreioMusical.Web
 ```
 
 Troque antes de divulgar o app e use algo mais forte que quatro dígitos, se possível.
@@ -102,7 +101,7 @@ Sem `Admin:Pin` configurado, as ações administrativas permanecerão desativada
 dotnet test
 ```
 
-Cobertura atual — **116 testes**:
+Cobertura atual — **129 testes**:
 
 - `NicknameTests` — normalização de espaços, limites de 2–30 caracteres e códigos de erro.
 - `TrackInfoTests` — campos obrigatórios, URLs absolutas e limites de tamanho.
@@ -116,6 +115,7 @@ Cobertura atual — **116 testes**:
 - `SpotifyTokenProviderTests` — Client Credentials, Basic auth, cache, expiração, invalidação e falhas.
 - `PlaylistChangeHubTests` — snapshot inicial e distribuição de mudanças para assinantes.
 - `DependencyInjectionTests` — grafo completo de DI validado na composição.
+- `PlaylistApiTests` — endpoints reais via `WebApplicationFactory`: playlist vazia, adição com apelido, apelido inválido, duplicata, sexta música, PIN ausente/errado/correto, limpeza, rate limit, busca e snapshot inicial do SSE.
 - `ArchitectureTests` e `HomePageTests` — direção das dependências e página inicial.
 
 ## Regras implementadas
@@ -127,19 +127,23 @@ Cobertura atual — **116 testes**:
 - **Concorrência:** até três tentativas quando alguém ocupa a vaga entre a leitura e a inserção; a chave primária e o índice único do SQLite são a garantia final.
 - **Spotify:** token *Client Credentials* em cache até pouco antes de expirar; `401` renova o token e `429` respeita o `Retry-After`, cada um com uma nova tentativa. Falhas viram `SpotifyUnavailable`.
 - **Erros previsíveis:** os casos de uso retornam `Result` com código estável e mensagem em PT-BR, prontos para os controllers mapearem status HTTP.
-- **Notificação:** adicionar, remover e limpar publicam o snapshot da playlist no `PlaylistChangeHub`; o SSE da Fase 4 apenas assina esse hub.
+- **Notificação:** adicionar, remover e limpar publicam o snapshot da playlist no `PlaylistChangeHub`; o SSE em `/api/playlist/events` apenas assina esse hub.
+- **Administração:** remoção e limpeza exigem o header `X-Admin-Pin`. O PIN é comparado em tempo constante (hash SHA-256), com limite de 5 tentativas erradas por origem a cada 5 minutos (`429` + `Retry-After`). Sem `Admin:Pin`, as ações administrativas ficam desativadas (`403`).
+- **Tela:** busca com debounce e cancelamento de requisições, apelido salvo no navegador, cinco vagas renderizadas no servidor e atualizadas via SSE, player oficial embed do Spotify e modal de PIN.
 
 ## Rotas
 
-| Rota | Status | Fase |
-| --- | --- | --- |
-| `GET /` | Implementada (shell) | 1 |
-| `GET /api/tracks/search?q=` | Planejada | 4 |
-| `GET /api/playlist` | Planejada | 4 |
-| `POST /api/playlist` | Planejada | 4 |
-| `DELETE /api/playlist/{slot}` | Planejada (PIN) | 4 |
-| `DELETE /api/playlist` | Planejada (PIN) | 4 |
-| `GET /api/playlist/events` | Planejada (SSE) | 4 |
+| Rota | Descrição |
+| --- | --- |
+| `GET /` | Página da playlist, renderizada no servidor |
+| `GET /api/tracks/search?q=` | Busca no catálogo do Spotify (2–80 caracteres) |
+| `GET /api/playlist` | Estado atual da playlist |
+| `POST /api/playlist` | Adiciona uma faixa (`trackId` + `addedBy`) |
+| `DELETE /api/playlist/{slot}` | Remove a música da vaga; exige `X-Admin-Pin` |
+| `DELETE /api/playlist` | Esvazia a playlist; exige `X-Admin-Pin` |
+| `GET /api/playlist/events` | SSE com o snapshot inicial e cada mudança |
+
+Erros da API usam *Problem Details* com `status`, `title`, `detail`, `instance` e o código estável em `code`. O SSE envia eventos `playlist` e um comentário de keep-alive a cada 15 segundos.
 
 ## Decisões de arquitetura
 
@@ -157,13 +161,13 @@ Cobertura atual — **116 testes**:
 - [x] **Fase 1 — Fundação:** solução, quatro camadas + testes, DI, configuração, página inicial e README.
 - [x] **Fase 2 — Domínio e casos de uso:** `PlaylistItem`, `Nickname`, `TrackInfo`, `Result`, handlers de busca/adição/remoção/limpeza e 76 testes.
 - [x] **Fase 3 — Infraestrutura:** EF Core + SQLite + migration inicial, repositório com as invariantes no banco, token/catálogo do Spotify com cache e retry, hub de notificações e handlers no contêiner; 116 testes.
-- [ ] **Fase 4 — Web/UI:** busca com debounce, apelido persistido, adição/remoção com PIN, SSE, player embed e endpoints `/api`.
-- [ ] **Fase 5 — Fechamento:** testes de integração dos endpoints, rate limit, acessibilidade, README final e checklist de aceite.
+- [x] **Fase 4 — Web/UI:** busca com debounce, apelido persistido, adição/remoção com PIN, SSE, player embed e endpoints `/api`; 129 testes.
+- [ ] **Fase 5 — Fechamento:** revisão final de acessibilidade, checklist de aceite e validação em produção.
 
 ## Observações
 
-- A página inicial em `http://localhost:5209` continua estática por enquanto: os controles aparecem desabilitados de propósito até a Fase 4.
+- A página inicial em `http://localhost:5209` já está funcional: busca, playlist ao vivo e administração por PIN.
 - As migrations são aplicadas automaticamente ao iniciar; o arquivo SQLite fica no content root (`src/RecreioMusical.Web` por padrão) e é ignorado pelo git.
-- Os handlers já estão registrados no contêiner junto com o repositório SQLite, o catálogo do Spotify e o hub de mudanças. O teste `DependencyInjectionTests` valida o grafo completo.
-- Sem credenciais do Spotify o app sobe normalmente; a busca responderá com erro amigável quando o endpoint existir. O aviso amarelo só aparece em `Development`.
+- Os handlers estão registrados no contêiner junto com o repositório SQLite, o catálogo do Spotify e o hub de mudanças. O teste `DependencyInjectionTests` valida o grafo completo.
+- Sem credenciais do Spotify o app sobe normalmente; a busca fica desabilitada e o aviso amarelo aparece só em `Development`.
 - user-secrets ficam no perfil do usuário, fora do projeto.

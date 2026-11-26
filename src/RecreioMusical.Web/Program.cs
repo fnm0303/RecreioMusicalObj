@@ -5,6 +5,7 @@ using RecreioMusical.Infrastructure;
 using RecreioMusical.Infrastructure.Persistence;
 using RecreioMusical.Infrastructure.Spotify;
 using RecreioMusical.Web.Configuration;
+using RecreioMusical.Web.Security;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,6 +15,9 @@ builder.Services.Configure<AdminOptions>(builder.Configuration.GetSection(AdminO
 
 builder.Services.AddControllersWithViews();
 builder.Services.AddProblemDetails();
+
+builder.Services.AddSingleton<AdminPinService>();
+builder.Services.AddSingleton<PinAttemptLimiter>();
 
 var app = builder.Build();
 

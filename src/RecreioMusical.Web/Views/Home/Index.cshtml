@@ -1,7 +1,10 @@
 ﻿@model HomeViewModel
+@using System.Text.Json
 @{
     ViewData["Title"] = "Playlist do recreio";
     var capacity = Model.PlaylistCapacity;
+    var itemsBySlot = Model.Playlist.Items.ToDictionary(item => item.Slot);
+    var jsonOptions = new JsonSerializerOptions(JsonSerializerDefaults.Web);
 }
 
 <section class="rm-hero">
@@ -36,14 +39,14 @@
 @if (Model.ShowDevelopmentNote)
 {
     <aside class="rm-dev-note" role="status">
-        <span class="rm-dev-badge">Fase 3</span>
+        <span class="rm-dev-badge">Fase 4</span>
         <p>
-            Infraestrutura pronta: SQLite com migrations, catálogo do Spotify e casos de uso testados.
+            Busca, playlist ao vivo, PIN administrativo e player do Spotify estão ativos.
             @if (Model.ShowSpotifySetupHint)
             {
                 <text>
                     Defina <code>Spotify:ClientId</code> e <code>Spotify:ClientSecret</code> via
-                    user-secrets (veja o README) para a busca funcionar quando a interface chegar.
+                    user-secrets (veja o README) para habilitar a busca.
                 </text>
             }
         </p>
@@ -60,25 +63,58 @@
             <span class="rm-chip">Spotify</span>
         </header>
 
-        <div class="rm-search" role="search" aria-label="Buscar músicas no Spotify">
+        <form class="rm-search" id="search-form" role="search" aria-label="Buscar músicas no Spotify">
             <svg class="rm-search-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                 <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2" />
                 <path d="m16.2 16.2 4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
             </svg>
             <input class="rm-search-input"
+                   id="search-input"
+                   name="q"
                    type="search"
                    placeholder="Música, artista ou álbum"
                    aria-label="Buscar músicas no Spotify"
-                   disabled />
-            <button class="rm-search-button" type="button" disabled>Buscar</button>
-        </div>
+                   autocomplete="off"
+                   minlength="2"
+                   maxlength="80"
+                   disabled="@(!Model.SearchEnabled)" />
+            <button class="rm-search-button" id="search-button" type="submit" disabled="@(!Model.SearchEnabled)">
+                Buscar
+            </button>
+        </form>
 
         <p class="rm-hint">
-            <span class="rm-hint-dot" aria-hidden="true"></span>
-            Em breve: busca integrada ao catálogo do Spotify.
+            <span class="rm-hint-dot @(Model.SearchEnabled ? "rm-hint-dot--live" : null)" aria-hidden="true"></span>
+            @if (Model.SearchEnabled)
+            {
+                <text>Busca no catálogo do Spotify. Digite pelo menos 2 caracteres.</text>
+            }
+            else
+            {
+                <text>Spotify não configurado: a busca fica desabilitada até as credenciais serem definidas.</text>
+            }
         </p>
 
-        <div class="rm-empty">
+        <div class="rm-identity">
+            <label class="rm-label" for="nickname">Passo 2 · Seu apelido</label>
+            <input class="rm-input"
+                   id="nickname"
+                   name="nickname"
+                   type="text"
+                   maxlength="30"
+                   placeholder="Como você quer aparecer?"
+                   autocomplete="nickname"
+                   aria-describedby="nickname-hint" />
+            <p class="rm-identity-hint" id="nickname-hint">
+                Entre 2 e 30 caracteres. Fica salvo apenas neste navegador.
+            </p>
+        </div>
+
+        <p class="rm-feedback" id="search-feedback" role="status" aria-live="polite" hidden></p>
+
+        <ul class="rm-results" id="search-results" aria-label="Resultados da busca" hidden></ul>
+
+        <div class="rm-empty" id="search-empty">
             <span class="rm-empty-icon" aria-hidden="true">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
                     <path d="M9 18V6.4a1 1 0 0 1 .8-.98l8-1.6A1 1 0 0 1 19 4.8v9.4"
@@ -97,42 +133,182 @@
     <section class="rm-panel rm-panel--playlist" aria-labelledby="playlist-heading">
         <header class="rm-panel-head">
             <div>
-                <p class="rm-kicker">Passo 2</p>
+                <p class="rm-kicker">Passo 3</p>
                 <h2 id="playlist-heading">Playlist do recreio</h2>
             </div>
             <span class="rm-chip rm-chip--accent">
                 <span class="rm-equalizer" aria-hidden="true"><i></i><i></i><i></i></span>
-                0/@capacity
+                <span id="playlist-count">@Model.Playlist.Count/@capacity</span>
             </span>
         </header>
 
-        <div class="rm-meter" role="img" aria-label="0 de @capacity vagas ocupadas">
-            @for (var segment = 0; segment < capacity; segment++)
+        <div class="rm-meter" id="playlist-meter" role="img" aria-label="@Model.Playlist.Count de @capacity vagas ocupadas">
+            @for (var slot = 1; slot <= capacity; slot++)
             {
-                <span class="rm-meter-segment"></span>
+                <span class="rm-meter-segment @(itemsBySlot.ContainsKey(slot) ? "rm-meter-segment--filled" : null)"></span>
             }
         </div>
 
-        <ol class="rm-slots" aria-label="Vagas da playlist">
+        <p class="rm-playlist-status" id="playlist-status">
+            @if (Model.Playlist.Count == 0)
+            {
+                <text>Nenhuma música escolhida ainda.</text>
+            }
+            else if (Model.Playlist.IsFull)
+            {
+                <text>Playlist completa: só a administração libera espaço.</text>
+            }
+            else
+            {
+                <text>@Model.Playlist.Count de @capacity vagas ocupadas.</text>
+            }
+        </p>
+
+        <div class="rm-player" id="player" hidden>
+            <div class="rm-player-head">
+                <div class="rm-player-copy">
+                    <span class="rm-player-kicker">Tocando agora</span>
+                    <span class="rm-player-title" id="player-title">Escolha uma música</span>
+                </div>
+                <button type="button" class="rm-icon-button" id="player-close" aria-label="Fechar player">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <path d="m6 6 12 12M18 6 6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                    </svg>
+                </button>
+            </div>
+            <iframe class="rm-player-frame"
+                    id="spotify-player"
+                    title="Player do Spotify"
+                    width="100%"
+                    height="152"
+                    frameborder="0"
+                    allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+                    loading="lazy"></iframe>
+        </div>
+
+        <ol class="rm-slots"
+            id="playlist-slots"
+            data-admin-enabled="@(Model.AdminEnabled ? "true" : "false")"
+            aria-label="Vagas da playlist">
             @for (var slot = 1; slot <= capacity; slot++)
             {
-                <li class="rm-slot rm-slot--empty">
-                    <span class="rm-slot-index" aria-hidden="true">@slot.ToString("00")</span>
-                    <span class="rm-slot-body">
-                        <span class="rm-slot-title">Vaga disponível</span>
-                        <span class="rm-slot-subtitle">Aguardando alguém escolher</span>
-                    </span>
-                    <span class="rm-slot-dot" aria-hidden="true"></span>
-                </li>
+                if (itemsBySlot.TryGetValue(slot, out var item))
+                {
+                    <li class="rm-slot rm-slot--filled" data-slot="@slot">
+                        <span class="rm-slot-index" aria-hidden="true">@slot.ToString("00")</span>
+                        <span class="rm-slot-cover" aria-hidden="true">
+                            @if (!string.IsNullOrWhiteSpace(item.CoverUrl))
+                            {
+                                <img src="@item.CoverUrl" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" />
+                            }
+                            else
+                            {
+                                <span class="rm-slot-cover-fallback">♪</span>
+                            }
+                        </span>
+                        <span class="rm-slot-body">
+                            <span class="rm-slot-title" title="@item.Title">@item.Title</span>
+                            <span class="rm-slot-subtitle">@item.Artists · por @item.AddedBy</span>
+                        </span>
+                        <span class="rm-slot-actions">
+                            <button type="button"
+                                    class="rm-icon-button rm-icon-button--play"
+                                    data-play-slot="@slot"
+                                    aria-label="Tocar @item.Title">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                    <path d="M9 7.5v9l8-4.5-8-4.5Z" fill="currentColor" />
+                                </svg>
+                            </button>
+                            <a class="rm-icon-button"
+                               href="@item.SpotifyUrl"
+                               target="_blank"
+                               rel="noopener noreferrer"
+                               aria-label="Abrir @item.Title no Spotify">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                    <path d="M14 4h6v6M20 4l-8 8" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" />
+                                    <path d="M18 14v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" />
+                                </svg>
+                            </a>
+                            @if (Model.AdminEnabled)
+                            {
+                                <button type="button"
+                                        class="rm-icon-button rm-icon-button--danger"
+                                        data-remove-slot="@slot"
+                                        aria-label="Remover @item.Title">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                        <path d="M5 7h14M9 7V5h6v2M8 10v8M12 10v8M16 10v8M6 7l1 13h10l1-13"
+                                              stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" />
+                                    </svg>
+                                </button>
+                            }
+                        </span>
+                    </li>
+                }
+                else
+                {
+                    <li class="rm-slot rm-slot--empty" data-slot="@slot">
+                        <span class="rm-slot-index" aria-hidden="true">@slot.ToString("00")</span>
+                        <span class="rm-slot-body">
+                            <span class="rm-slot-title">Vaga disponível</span>
+                            <span class="rm-slot-subtitle">Aguardando alguém escolher</span>
+                        </span>
+                        <span class="rm-slot-dot" aria-hidden="true"></span>
+                    </li>
+                }
             }
         </ol>
 
-        <footer class="rm-panel-foot">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <rect x="5" y="10" width="14" height="10" rx="2" stroke="currentColor" stroke-width="1.8" />
-                <path d="M8 10V7a4 4 0 0 1 8 0v3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
-            </svg>
-            Quando as @capacity vagas forem preenchidas, só a administração libera espaço.
+        @if (Model.AdminEnabled)
+        {
+            <div class="rm-admin">
+                <div class="rm-admin-copy">
+                    <p class="rm-admin-title">Administração</p>
+                    <p class="rm-admin-hint">Remover músicas ou limpar a playlist exige PIN.</p>
+                </div>
+                <button type="button" class="rm-button rm-button--ghost" id="clear-playlist">
+                    Limpar playlist
+                </button>
+            </div>
+        }
+
+        <footer class="rm-panel-foot rm-panel-foot--stack">
+            <span class="rm-live" id="live-status" data-state="connecting" role="status">
+                <span class="rm-live-dot" aria-hidden="true"></span>
+                <span id="live-label">Conectando à playlist ao vivo…</span>
+            </span>
+            <span>Quando as @capacity vagas forem preenchidas, só a administração libera espaço.</span>
         </footer>
     </section>
 </div>
+
+<div class="rm-toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+<dialog class="rm-dialog" id="pin-dialog" aria-labelledby="pin-dialog-title">
+    <form class="rm-dialog-form" id="pin-form" method="dialog">
+        <span class="rm-dialog-badge">Administração</span>
+        <h2 id="pin-dialog-title">PIN necessário</h2>
+        <p class="rm-dialog-message" id="pin-dialog-message">Digite o PIN para continuar.</p>
+
+        <label class="rm-label" for="pin-input">PIN</label>
+        <input class="rm-input rm-input--pin"
+               id="pin-input"
+               type="password"
+               inputmode="numeric"
+               autocomplete="off"
+               maxlength="64"
+               aria-describedby="pin-error" />
+
+        <p class="rm-dialog-error" id="pin-error" role="alert" hidden></p>
+
+        <div class="rm-dialog-actions">
+            <button type="button" class="rm-button rm-button--ghost" id="pin-cancel">Cancelar</button>
+            <button type="submit" class="rm-button" id="pin-confirm">Confirmar</button>
+        </div>
+    </form>
+</dialog>
+
+<script id="initial-playlist" type="application/json">@Html.Raw(JsonSerializer.Serialize(Model.Playlist, jsonOptions))</script>
+
+@section Scripts {
+    <script src="~/js/playlist.js" asp-append-version="true"></script>
+}

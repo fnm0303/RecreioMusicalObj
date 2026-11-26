@@ -88,6 +88,13 @@ public sealed class PlaylistSubscription : IAsyncDisposable
     public IAsyncEnumerable<PlaylistDto> ReadAllAsync(CancellationToken cancellationToken) =>
         _reader.ReadAllAsync(cancellationToken);
 
+    /// <summary>Espera assíncrona usada pelo SSE para mesclar leituras e heartbeats.</summary>
+    public ValueTask<bool> WaitToReadAsync(CancellationToken cancellationToken) =>
+        _reader.WaitToReadAsync(cancellationToken);
+
+    public bool TryRead(out PlaylistDto playlist) =>
+        _reader.TryRead(out playlist!);
+
     public ValueTask DisposeAsync()
     {
         if (!_disposed)
