@@ -36,23 +36,6 @@
     </ol>
 </section>
 
-@if (Model.ShowDevelopmentNote)
-{
-    <aside class="rm-dev-note" role="status">
-        <span class="rm-dev-badge">Fase 4</span>
-        <p>
-            Busca, playlist ao vivo, PIN administrativo e player do Spotify estão ativos.
-            @if (Model.ShowSpotifySetupHint)
-            {
-                <text>
-                    Defina <code>Spotify:ClientId</code> e <code>Spotify:ClientSecret</code> via
-                    user-secrets (veja o README) para habilitar a busca.
-                </text>
-            }
-        </p>
-    </aside>
-}
-
 <div class="rm-grid">
     <section class="rm-panel" aria-labelledby="search-heading">
         <header class="rm-panel-head">

@@ -34,6 +34,8 @@ public sealed class HomePageTests : IClassFixture<WebApplicationFactory<Program>
         Assert.Contains("Playlist do recreio", html, StringComparison.Ordinal);
         Assert.Contains("logo-objetivo.png", html, StringComparison.Ordinal);
         Assert.Contains("Colégio Objetivo", html, StringComparison.Ordinal);
+        Assert.DoesNotContain("Fase 4", html, StringComparison.Ordinal);
+        Assert.DoesNotContain("rm-dev-note", html, StringComparison.Ordinal);
         Assert.Equal(5, CountOccurrences(html, "Vaga disponível"));
     }
 

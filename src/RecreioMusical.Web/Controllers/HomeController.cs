@@ -13,23 +13,19 @@ public sealed class HomeController : Controller
     private readonly GetPlaylistHandler _getPlaylist;
     private readonly SpotifyOptions _spotifyOptions;
     private readonly AdminOptions _adminOptions;
-    private readonly IWebHostEnvironment _environment;
 
     public HomeController(
         GetPlaylistHandler getPlaylist,
         IOptions<SpotifyOptions> spotifyOptions,
-        IOptions<AdminOptions> adminOptions,
-        IWebHostEnvironment environment)
+        IOptions<AdminOptions> adminOptions)
     {
         ArgumentNullException.ThrowIfNull(getPlaylist);
         ArgumentNullException.ThrowIfNull(spotifyOptions);
         ArgumentNullException.ThrowIfNull(adminOptions);
-        ArgumentNullException.ThrowIfNull(environment);
 
         _getPlaylist = getPlaylist;
         _spotifyOptions = spotifyOptions.Value;
         _adminOptions = adminOptions.Value;
-        _environment = environment;
     }
 
     public async Task<IActionResult> Index(CancellationToken cancellationToken)
@@ -41,9 +37,7 @@ public sealed class HomeController : Controller
             Playlist = playlist,
             PlaylistCapacity = playlist.Capacity,
             SearchEnabled = _spotifyOptions.IsConfigured,
-            AdminEnabled = _adminOptions.IsEnabled,
-            ShowDevelopmentNote = _environment.IsDevelopment(),
-            ShowSpotifySetupHint = _environment.IsDevelopment() && !_spotifyOptions.IsConfigured
+            AdminEnabled = _adminOptions.IsEnabled
         };
 
         return View(model);
