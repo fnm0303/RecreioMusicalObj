@@ -39,8 +39,20 @@ public static class DependencyInjection
         var connectionString = ResolveConnectionString(
             configuration.GetConnectionString("Playlist"),
             contentRootPath);
+        var dataSource = new SqliteConnectionStringBuilder(connectionString).DataSource;
 
-        services.AddDbContext<PlaylistDbContext>(options => options.UseSqlite(connectionString));
+        services.AddSingleton(new SqliteDatabaseOptions
+        {
+            ConnectionString = connectionString,
+            DataSource = dataSource
+        });
+
+        services.AddSingleton<SqliteConnectionInterceptor>();
+        services.AddDbContext<PlaylistDbContext>((provider, options) =>
+        {
+            options.UseSqlite(connectionString);
+            options.AddInterceptors(provider.GetRequiredService<SqliteConnectionInterceptor>());
+        });
         services.AddScoped<IPlaylistRepository, EfPlaylistRepository>();
 
         services.AddHttpClient(SpotifyHttpClient.Name, client =>
@@ -70,6 +82,24 @@ public static class DependencyInjection
             builder.DataSource = Path.Combine(contentRootPath, builder.DataSource);
         }
 
+        EnsureDataSourceDirectory(builder.DataSource);
+
         return builder.ConnectionString;
+    }
+
+    private static void EnsureDataSourceDirectory(string? dataSource)
+    {
+        if (string.IsNullOrWhiteSpace(dataSource) ||
+            dataSource == ":memory:" ||
+            dataSource.StartsWith("file:", StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        var directory = Path.GetDirectoryName(Path.GetFullPath(dataSource));
+        if (!string.IsNullOrWhiteSpace(directory))
+        {
+            Directory.CreateDirectory(directory);
+        }
     }
 }

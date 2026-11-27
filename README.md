@@ -2,7 +2,7 @@
 
 Aplicativo web para montar, em conjunto, a playlist do recreio: **cinco músicas**, escolhidas por qualquer pessoa, sem login. A busca usa a API do Spotify e cada música é creditada ao apelido de quem escolheu.
 
-> **Status:** Fase 4 de 5 concluída — busca no Spotify, playlist ao vivo por SSE, player embed e administração por PIN, com 129 testes.
+> **Status:** Fase 5 pronta para go-live — busca no Spotify, playlist ao vivo por SSE, player embed, administração por PIN e publicação no Azure App Service, com 132 testes.
 
 ## Stack
 
@@ -47,6 +47,64 @@ Acesse <http://localhost:5209> (perfil `http`). O perfil `https` usa <https://lo
 
 Também é possível abrir `RecreioMusical.sln` em uma IDE com suporte a .NET 10 e iniciar o projeto `RecreioMusical.Web`.
 
+## Publicação no Azure
+
+O ambiente de produção usa **Azure App Service (Linux, .NET 10, plano B1)** e **GitHub Actions com OIDC**. O workflow `.github/workflows/azure-deploy.yml` roda build, os 132 testes e publica a branch `main` a cada push.
+
+### Provisionamento (uma vez)
+
+Pré-requisitos: assinatura Azure com permissão para criar recursos e *app registrations*, credenciais do Spotify e um PIN forte (6 a 12 dígitos).
+
+No **Azure Cloud Shell**:
+
+```bash
+git clone https://github.com/fnm0303/RecreioMusicalObj.git
+cd RecreioMusicalObj
+bash scripts/azure-provision.sh
+```
+
+O script cria o resource group, o plano B1 e o Web App; configura HTTPS Only, TLS 1.2, Always On, health check em `/health` e logs; grava as app settings (Spotify, PIN e `ConnectionStrings__Playlist=Data Source=/home/data/recreio-musical.db`); cria a identidade federada OIDC para `repo:fnm0303/RecreioMusicalObj:ref:refs/heads/main` com o papel `Website Contributor`; e imprime os valores do GitHub. Se o `gh` estiver autenticado, ele grava os secrets e dispara o workflow de deploy automaticamente.
+
+Cadastro manual no GitHub (Settings → Secrets and variables → Actions):
+
+| Tipo | Nome | Valor |
+| --- | --- | --- |
+| Secret | `AZURE_CLIENT_ID` | appId da identidade criada |
+| Secret | `AZURE_TENANT_ID` | tenant da assinatura |
+| Secret | `AZURE_SUBSCRIPTION_ID` | id da assinatura |
+| Variable | `AZURE_WEBAPP_NAME` | nome do Web App (ex.: `recreio-musical-obj`) |
+
+### Deploy
+
+Faça push na `main` ou execute **Actions → Deploy to Azure App Service → Run workflow**. Enquanto a variable `AZURE_WEBAPP_NAME` não existir, o workflow compila e testa, mas pula o deploy — assim o repositório já pode receber o script de provisionamento sem quebrar o CI. Para acompanhar:
+
+```bash
+az webapp log tail --name recreio-musical-obj --resource-group rg-recreio-musical
+```
+
+### Operação
+
+| Item | Valor |
+| --- | --- |
+| URL | `https://recreio-musical-obj.azurewebsites.net` |
+| Banco | `/home/data/recreio-musical.db` |
+| Backups | `/home/data/backups` (um por dia, mantendo 7) |
+| Saúde | `/health` |
+| Instâncias | 1 — o hub do SSE e o rate limit do PIN são em memória |
+| Custo | B1 Linux, aproximadamente US$ 13–16/mês |
+
+- **Trocar o PIN:** `az webapp config appsettings set -g rg-recreio-musical -n recreio-musical-obj --settings Admin__Pin=NOVO_PIN` (o app reinicia).
+- **Reiniciar:** `az webapp restart -g rg-recreio-musical -n recreio-musical-obj`.
+- **Baixar um backup:** Kudu em `https://recreio-musical-obj.scm.azurewebsites.net` → *File Manager* → `/home/data/backups`.
+- **Restaurar:** `az webapp stop`, substitua o `.db` pelo backup, `az webapp start`.
+- **Logs:** `az webapp log tail` ou *Log stream* no portal.
+- **Orçamento:** em *Cost Management → Budgets*, crie um alerta (ex.: US$ 20/mês, aviso em 80%) para evitar surpresa na fatura.
+- **Domínio próprio (opcional):** adicione o CNAME e o TXT de verificação no DNS da escola; o certificado gerenciado gratuito é emitido pelo App Service.
+
+O `/home` do App Service é um compartilhamento de rede (Azure Files/SMB). Com uma instância e escrita rara — cinco vagas — o SQLite funciona bem, e o backup diário cobre o risco. Se o uso crescer, o próximo passo é migrar para Azure SQL.
+
+O plano B1 **não tem deployment slots**: cada deploy reinicia o app por alguns segundos; o SSE reconecta sozinho. Evite publicar durante o recreio. Para zero downtime, seria necessário o tier Standard.
+
 ## Banco de dados
 
 O app usa SQLite e aplica as migrations automaticamente na inicialização. Por padrão o arquivo fica em `src/RecreioMusical.Web/recreio-musical.db` (resolvido a partir do content root); o caminho pode ser trocado em `ConnectionStrings:Playlist`.
@@ -86,7 +144,7 @@ Em produção, use as variáveis de ambiente `Spotify__ClientId` e `Spotify__Cli
 
 ### PIN administrativo
 
-Remover músicas e limpar a playlist exige PIN. Neste ambiente já existe um valor provisório `1234`:
+Remover músicas e limpar a playlist exige PIN. Em desenvolvimento ele fica em user-secrets, fora do repositório:
 
 ```powershell
 dotnet user-secrets set "Admin:Pin" "19031984" --project src/RecreioMusical.Web
@@ -101,7 +159,7 @@ Sem `Admin:Pin` configurado, as ações administrativas permanecerão desativada
 dotnet test
 ```
 
-Cobertura atual — **129 testes**:
+Cobertura atual — **132 testes**:
 
 - `NicknameTests` — normalização de espaços, limites de 2–30 caracteres e códigos de erro.
 - `TrackInfoTests` — campos obrigatórios, URLs absolutas e limites de tamanho.
@@ -116,6 +174,7 @@ Cobertura atual — **129 testes**:
 - `PlaylistChangeHubTests` — snapshot inicial e distribuição de mudanças para assinantes.
 - `DependencyInjectionTests` — grafo completo de DI validado na composição.
 - `PlaylistApiTests` — endpoints reais via `WebApplicationFactory`: playlist vazia, adição com apelido, apelido inválido, duplicata, sexta música, PIN ausente/errado/correto, limpeza, rate limit, busca e snapshot inicial do SSE.
+- `ProductionReadinessTests` — `/health`, `X-Robots-Tag`/`robots.txt` e criação automática do diretório do SQLite.
 - `ArchitectureTests` e `HomePageTests` — direção das dependências e página inicial.
 
 ## Regras implementadas
@@ -163,7 +222,8 @@ Erros da API usam *Problem Details* com `status`, `title`, `detail`, `instance` 
 - [x] **Fase 2 — Domínio e casos de uso:** `PlaylistItem`, `Nickname`, `TrackInfo`, `Result`, handlers de busca/adição/remoção/limpeza e 76 testes.
 - [x] **Fase 3 — Infraestrutura:** EF Core + SQLite + migration inicial, repositório com as invariantes no banco, token/catálogo do Spotify com cache e retry, hub de notificações e handlers no contêiner; 116 testes.
 - [x] **Fase 4 — Web/UI:** busca com debounce, apelido persistido, adição/remoção com PIN, SSE, player embed e endpoints `/api`; 129 testes.
-- [ ] **Fase 5 — Fechamento:** revisão final de acessibilidade, checklist de aceite e validação em produção.
+- [x] **Fase 5 — Publicação:** forwarded headers, `/health`, `noindex`, banco em `/home/data`, backup diário, workflow OIDC e script de provisionamento; 132 testes.
+- [ ] **Go-live:** provisionar o Azure, publicar a `main` e validar a URL pública em dois dispositivos.
 
 ## Observações
 
