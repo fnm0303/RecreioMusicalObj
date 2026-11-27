@@ -52,7 +52,12 @@ if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
     app.UseHsts();
-    app.UseHttpsRedirection();
+
+    // O health check do App Service pode chegar por HTTP interno; /health não
+    // é redirecionado para HTTPS para que a sondagem receba 200.
+    app.UseWhen(
+        context => !context.Request.Path.StartsWithSegments("/health"),
+        branch => branch.UseHttpsRedirection());
 }
 
 app.MapStaticAssets();
